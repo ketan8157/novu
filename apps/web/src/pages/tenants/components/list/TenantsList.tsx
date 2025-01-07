@@ -29,7 +29,7 @@ export const TenantsList = ({
 
   return (
     <>
-      <Container fluid sx={{ padding: '0 30px 8px 30px' }}>
+      <Container fluid sx={{ padding: '0 24px 8px 24px' }}>
         <Toolbar onAddTenantClick={onAddTenantClick} tenantLoading={loading} />
       </Container>
       <When truthy={loadingPhase}>
@@ -40,7 +40,7 @@ export const TenantsList = ({
           columns={columns}
           data={tenants || []}
           pagination={{
-            pageSize: pageSize,
+            pageSize,
             current: page,
             hasMore,
             minimalPagination: true,

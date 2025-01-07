@@ -24,7 +24,7 @@ export function ActionBlockContainer({
   onRemoveTemplate: () => void;
   isButtonsTemplateSelected: boolean;
   onChange: (data: any) => void;
-  value: IMessageAction;
+  value: IMessageAction | undefined;
   readonly: boolean;
 }) {
   return (
@@ -44,7 +44,7 @@ export function ActionBlockContainer({
 }
 
 interface ISelectedButtonTemplateProps {
-  value: IMessageAction;
+  value?: IMessageAction;
   onRemoveTemplate: () => void;
   onChange: (actions: any) => void;
   readonly: boolean;
@@ -55,6 +55,7 @@ function SelectedButtonTemplate(props: ISelectedButtonTemplateProps) {
   const buttonStyle = dark ? darkButtonStyle : lightButtonStyle;
 
   function handleOnButtonContentChange(data: any, buttonIndex: number) {
+    // eslint-disable-next-line no-unsafe-optional-chaining
     const currentButtonsValue = props?.value?.buttons ? [...props?.value?.buttons] : [];
 
     if (currentButtonsValue) {

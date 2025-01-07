@@ -41,7 +41,7 @@ export function ButtonsTemplatesPopover({
 
   function handleOnButtonChange(buttons: IMessageButton[]) {
     if (buttons) {
-      const newAction = { buttons: buttons, status: MessageActionStatusEnum.PENDING };
+      const newAction = { buttons, status: MessageActionStatusEnum.PENDING };
       onChange(newAction);
     }
   }
@@ -53,6 +53,7 @@ export function ButtonsTemplatesPopover({
       position={'bottom'}
       withArrow
       classNames={classes}
+      middlewares={{ flip: false, shift: false }}
     >
       <Popover.Target>{children}</Popover.Target>
       <Popover.Dropdown>

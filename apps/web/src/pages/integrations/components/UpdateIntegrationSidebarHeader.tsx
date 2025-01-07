@@ -2,8 +2,8 @@ import { ReactNode, useMemo, useState } from 'react';
 import { Group, useMantineTheme } from '@mantine/core';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { CHANNELS_WITH_PRIMARY } from '@novu/shared';
-
 import {
+  ActionButton,
   Button,
   colors,
   Dropdown,
@@ -14,8 +14,10 @@ import {
   DotsHorizontal,
   StarEmpty,
   Trash,
+  When,
 } from '@novu/design-system';
-import { useFetchEnvironments } from '../../../hooks/useFetchEnvironments';
+
+import { useEnvironment } from '../../../hooks';
 import { ProviderImage } from './multi-provider/SelectProviderSidebar';
 import type { IIntegratedProvider, IntegrationEntity } from '../types';
 import { useProviders } from '../useProviders';
@@ -40,7 +42,7 @@ export const UpdateIntegrationSidebarHeader = ({
 }) => {
   const [isModalOpened, setModalIsOpened] = useState(false);
   const { control } = useFormContext();
-  const { environments } = useFetchEnvironments();
+  const { environments } = useEnvironment();
   const { colorScheme } = useMantineTheme();
   const { providers, isLoading } = useProviders();
   const canMarkAsPrimary = provider && !provider.primary && CHANNELS_WITH_PRIMARY.includes(provider.channel);
@@ -131,23 +133,21 @@ export const UpdateIntegrationSidebarHeader = ({
         />
         <Group spacing={12} noWrap ml="auto">
           {children}
-          <PrimaryIconButton
-            primary={provider.primary}
-            onClick={() => {
-              makePrimaryIntegration({ id: provider.integrationId });
-            }}
-            conditions={numOfConditions}
-          />
+          <When truthy={canMarkAsPrimary}>
+            <PrimaryIconButton
+              primary={provider.primary}
+              onClick={() => {
+                makePrimaryIntegration({ id: provider.integrationId });
+              }}
+              conditions={numOfConditions}
+            />
+          </When>
           <ConditionIconButton primary={provider.primary} onClick={openConditions} conditions={numOfConditions} />
           <div>
             <Dropdown
               withArrow={false}
               offset={0}
-              control={
-                <div style={{ cursor: 'pointer' }}>
-                  <DotsHorizontal color={colors.B40} width={28} height={28} />
-                </div>
-              }
+              control={<ActionButton Icon={DotsHorizontal} />}
               middlewares={{ flip: false, shift: false }}
               position="bottom-end"
             >

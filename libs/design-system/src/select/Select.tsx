@@ -1,8 +1,7 @@
-import React, { FC, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   Select as MantineSelect,
-  SelectProps,
   MultiSelect as MantineMultiSelect,
   CloseButton,
   InputBaseProps,
@@ -17,33 +16,7 @@ import { inputStyles } from '../config/inputs.styles';
 import { ArrowDown } from '../icons';
 import { colors } from '../config';
 import { Text } from '../index';
-import { SpacingProps } from '../shared/spacing.props';
-
-interface ISelectProps extends SpacingProps {
-  data: (string | { value: string; label?: string } | SelectItem)[];
-  value?: string[] | string | null;
-  onChange?: (value: string[] | string | null) => void;
-  label?: React.ReactNode;
-  error?: React.ReactNode;
-  itemComponent?: FC<any>;
-  placeholder?: string;
-  description?: string;
-  getCreateLabel?: (query: string) => React.ReactNode;
-  onDropdownOpen?: () => void;
-  onSearchChange?: (query: string) => void;
-  onCreate?: SelectProps['onCreate'];
-  searchable?: boolean;
-  creatable?: boolean;
-  disabled?: boolean;
-  required?: boolean;
-  loading?: boolean;
-  type?: 'multiselect' | 'select';
-  filter?: (value: string, item: SelectItem) => boolean;
-  allowDeselect?: boolean;
-  dataTestId?: string;
-  rightSectionWidth?: React.CSSProperties['width'];
-  inputProps?: InputBaseProps;
-}
+import { ISelectProps } from './Select.types';
 
 /**
  * Select component
@@ -64,6 +37,8 @@ export const Select = React.forwardRef<HTMLInputElement, ISelectProps>(
       onChange,
       inputProps = {},
       dataTestId,
+      withinPortal = false,
+      className,
       ...props
     }: ISelectProps,
     ref
@@ -116,7 +91,7 @@ export const Select = React.forwardRef<HTMLInputElement, ISelectProps>(
     }, [loading, theme]);
 
     return (
-      <Wrapper style={{ position: 'relative' }}>
+      <Wrapper style={{ position: 'relative' }} className={className}>
         {multiselect ? (
           <MantineMultiSelect
             ref={ref}
@@ -148,6 +123,7 @@ export const Select = React.forwardRef<HTMLInputElement, ISelectProps>(
             data={data}
             required={required}
             data-test-id={dataTestId}
+            withinPortal={withinPortal}
             {...props}
             {...loadingProps}
           />
@@ -157,10 +133,12 @@ export const Select = React.forwardRef<HTMLInputElement, ISelectProps>(
   }
 );
 
-function Value({ label, onRemove }: MultiSelectValueProps) {
+function Value({ label, onRemove, disabled }: MultiSelectValueProps) {
   const theme = useMantineTheme();
   const dark = theme.colorScheme === 'dark';
-  const backgroundColor = dark ? theme.colors.dark[4] : theme.colors.gray[0];
+  const enabledBackgroundColor = dark ? theme.colors.dark[4] : theme.colors.gray[0];
+  const disabledBackgroundColor = dark ? theme.colors.dark[5] : theme.colors.gray[3];
+  const backgroundColor = disabled ? disabledBackgroundColor : enabledBackgroundColor;
   const color = dark ? theme.colors.dark[3] : theme.colors.gray[5];
 
   return (
@@ -175,7 +153,7 @@ function Value({ label, onRemove }: MultiSelectValueProps) {
     >
       <div
         style={{
-          margin: '6.5px 0px 6.5px 10px',
+          margin: `6.5px ${disabled ? '10px' : '0px'} 6.5px 10px`,
           lineHeight: '20px',
           maxWidth: '80px',
           fontSize: 14,
@@ -184,7 +162,9 @@ function Value({ label, onRemove }: MultiSelectValueProps) {
       >
         <Text rows={1}>{label}</Text>
       </div>
-      <CloseButton style={{ color }} onMouseDown={onRemove} variant="transparent" size={30} iconSize={15} />
+      {!disabled && (
+        <CloseButton style={{ color }} onMouseDown={onRemove} variant="transparent" size={30} iconSize={15} />
+      )}
     </Box>
   );
 }

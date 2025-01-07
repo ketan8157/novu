@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
-import { Group, Image, Space, Stack, Tabs, TabsValue, useMantineColorScheme } from '@mantine/core';
-import {
-  ChannelTypeEnum,
-  emailProviders,
-  smsProviders,
-  pushProviders,
-  inAppProviders,
-  chatProviders,
-  InAppProviderIdEnum,
-} from '@novu/shared';
-
+import { Group, Image, Space, Stack, Tabs, useMantineColorScheme } from '@mantine/core';
+import { ChannelTypeEnum, InAppProviderIdEnum } from '@novu/shared';
 import {
   colors,
   Sidebar,
@@ -23,36 +14,22 @@ import {
   Search,
   useTabsStyles,
 } from '@novu/design-system';
+
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useDebounce } from '../../../../hooks';
 import { ChannelTitle } from '../../../templates/components/ChannelTitle';
 import type { IIntegratedProvider } from '../../types';
 import { CHANNELS_ORDER } from '../IntegrationsListNoData';
 import { CHANNEL_TYPE_TO_STRING } from '../../../../utils/channels';
-import { getLogoFileName } from '../../../../utils/providers';
+import { getLogoFileName, initialProvidersList } from '../../../../utils/providers';
 import { sortProviders } from './sort-providers';
 import { When } from '../../../../components/utils/When';
 import { CONTEXT_PATH } from '../../../../config';
 import { useProviders } from '../../useProviders';
-import { HEADER_HEIGHT } from '../../../../components/layout/constants';
+import { ROUTES } from '../../../../constants/routes';
 
 const filterSearch = (list, search: string) =>
   list.filter((prov) => prov.displayName.toLowerCase().includes(search.toLowerCase()));
-
-const mapStructure = (listProv): IIntegratedProvider[] =>
-  listProv.map((providerItem) => ({
-    providerId: providerItem.id,
-    displayName: providerItem.displayName,
-    channel: providerItem.channel,
-    docReference: providerItem.docReference,
-  }));
-
-const initialProvidersList = {
-  [ChannelTypeEnum.EMAIL]: mapStructure(emailProviders),
-  [ChannelTypeEnum.SMS]: mapStructure(smsProviders),
-  [ChannelTypeEnum.PUSH]: mapStructure(pushProviders),
-  [ChannelTypeEnum.IN_APP]: mapStructure(inAppProviders),
-  [ChannelTypeEnum.CHAT]: mapStructure(chatProviders),
-};
 
 export function SelectProviderSidebar({
   scrollTo,
@@ -68,6 +45,8 @@ export function SelectProviderSidebar({
   const [providersList, setProvidersList] = useState(initialProvidersList);
   const [selectedTab, setSelectedTab] = useState(ChannelTypeEnum.IN_APP);
   const { isLoading: isIntegrationsLoading, providers: integrations } = useProviders();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const inAppCount: number = useMemo(() => {
     const count = integrations.filter(
@@ -100,21 +79,14 @@ export function SelectProviderSidebar({
   const onProviderClick = (provider) => () => setSelectedProvider(provider);
 
   const onTabChange = useCallback(
-    (elementId?: TabsValue) => {
-      if (!elementId) {
-        return;
+    (channel: ChannelTypeEnum) => {
+      setSelectedTab(channel as ChannelTypeEnum);
+
+      if (pathname.includes(ROUTES.INTEGRATIONS_CREATE)) {
+        navigate(`${ROUTES.INTEGRATIONS_CREATE}?scrollTo=${channel}`);
       }
-
-      setSelectedTab(elementId as ChannelTypeEnum);
-
-      const element = document.getElementById(elementId);
-
-      element?.parentElement?.scrollTo({
-        behavior: 'smooth',
-        top: element?.offsetTop ? element?.offsetTop - 250 : undefined,
-      });
     },
-    [setSelectedTab]
+    [navigate, pathname]
   );
 
   const onSidebarClose = () => {
@@ -123,15 +95,35 @@ export function SelectProviderSidebar({
     setSelectedTab(inAppCount < 2 ? ChannelTypeEnum.IN_APP : ChannelTypeEnum.EMAIL);
   };
 
+  const scrollToElement = (elementId: string) => {
+    const element = document.getElementById(elementId);
+    if (element && element.parentElement) {
+      element.parentElement.scrollTo({
+        behavior: 'smooth',
+        top: element.offsetTop - 250,
+      });
+    }
+  };
+
+  // TODO: sometime the scrollTo url param needs to change and sometimes not (e.g. from /get-started)
   useEffect(() => {
-    onTabChange(scrollTo?.toString());
-  }, [onTabChange, scrollTo]);
+    if (selectedTab && !isIntegrationsLoading) {
+      onTabChange(selectedTab);
+      scrollToElement(selectedTab);
+    }
+  }, [selectedTab, isIntegrationsLoading, onTabChange]);
+
+  useEffect(() => {
+    if (scrollTo && !isIntegrationsLoading) {
+      onTabChange(scrollTo);
+      scrollToElement(scrollTo);
+    }
+  }, [scrollTo, isIntegrationsLoading, onTabChange]);
 
   return (
     <Sidebar
       isOpened={isOpened}
       isLoading={isIntegrationsLoading}
-      headerHeight={HEADER_HEIGHT}
       onClose={onSidebarClose}
       customHeader={
         <Stack spacing={8}>
@@ -187,6 +179,10 @@ export function SelectProviderSidebar({
           type={'search'}
           onChange={(e) => {
             debouncedSearchChange(e.target.value);
+            if (e.target.value === '') {
+              // added timeout of 1000ms so that scroll happens after provider list is rendered
+              setTimeout(() => scrollToElement(selectedTab), 1000);
+            }
           }}
           mb={20}
           placeholder={'Search a provider...'}
@@ -312,7 +308,7 @@ const CenterDiv = styled.div`
   line-height: 20px;
 `;
 
-const SelectProviderBodyContainer = styled.form`
+const SelectProviderBodyContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
